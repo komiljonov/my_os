@@ -6,11 +6,29 @@
 #include <hardwarecommunication/port.h>
 #include <drivers/driver.h>
 #include <hardwarecommunication/interrupts.h>
+#include <drivers/vga.h>
 
 namespace myos
 {
     namespace drivers
     {
+
+        constexpr uint8_t BLACK = 0x00;
+        constexpr uint8_t BLUE = 0x01;
+        constexpr uint8_t GREEN = 0x02;
+        constexpr uint8_t CYAN = 0x03;
+        constexpr uint8_t RED = 0x04;
+        constexpr uint8_t MAGENTA = 0x05;
+        constexpr uint8_t BROWN = 0x06;
+        constexpr uint8_t LIGHTGRAY = 0x07;
+        constexpr uint8_t DARKGRAY = 0x08;
+        constexpr uint8_t LIGHTBLUE = 0x09;
+        constexpr uint8_t LIGHTGREEN = 0x0A;
+        constexpr uint8_t LIGHTCYAN = 0x0B;
+        constexpr uint8_t LIGHTRED = 0x0C;
+        constexpr uint8_t LIGHTMAGENTA = 0x0D;
+        constexpr uint8_t YELLOW = 0x0E;
+        constexpr uint8_t WHITE = 0x0F;
 
         class MouseEventHandler
         {
@@ -21,7 +39,7 @@ namespace myos
             virtual void OnActivate();
             virtual void OnMouseDown(myos::common::uint8_t button);
             virtual void OnMouseUp(myos::common::uint8_t button);
-            virtual void OnMouseMove(int x, int y);
+            virtual void OnMouseMove(myos::common::int8_t xoffset, myos::common::int8_t yoffset);
         };
 
         class MouseDriver : public myos::hardwarecommunication::InterruptHandler, public Driver
@@ -41,6 +59,26 @@ namespace myos
             ~MouseDriver();
             virtual myos::common::uint32_t HandleInterrupt(myos::common::uint32_t esp);
             virtual void Activate();
+        };
+
+        class MouseToConsole : public MouseEventHandler
+        {
+            myos::common::int8_t x, y;
+
+        public:
+            MouseToConsole();
+            virtual void OnMouseMove(myos::common::int8_t xoffset, myos::common::int8_t yoffset);
+        };
+
+        class MouseToVGAScreen : public MouseEventHandler
+        {
+            myos::common::int32_t x, y;
+
+            VideoGraphicsArray *vga;
+
+        public:
+            MouseToVGAScreen(VideoGraphicsArray *vga);
+            virtual void OnMouseMove(myos::common::int8_t xoffset, myos::common::int8_t yoffset);
         };
 
     }

@@ -30,6 +30,10 @@ namespace myos
 
             virtual myos::common::uint8_t GetColorIndex(myos::common::uint8_t r, myos::common::uint8_t g, myos::common::uint8_t b);
 
+            myos::common::uint8_t *frameBufferSegment;
+
+            void SetFrameBufferSegment();
+
         public:
             VideoGraphicsArray();
             ~VideoGraphicsArray();
@@ -38,8 +42,24 @@ namespace myos
 
             virtual bool SetMode(myos::common::uint32_t width, myos::common::uint32_t height, myos::common::uint32_t colorDepth);
 
-                        virtual void PutPixel(myos::common::uint32_t x, myos::common::uint32_t y, myos::common::uint8_t r, myos::common::uint8_t g, myos::common::uint8_t b);
+            virtual void PutPixel(myos::common::uint32_t x, myos::common::uint32_t y, myos::common::uint8_t r, myos::common::uint8_t g, myos::common::uint8_t b);
             virtual void PutPixel(myos::common::uint32_t x, myos::common::uint32_t y, myos::common::uint8_t colorIndex);
+
+            virtual void DrawRect(
+                myos::common::uint32_t x,
+                myos::common::uint32_t y,
+                myos::common::uint32_t width,
+                myos::common::uint32_t height,
+                myos::common::uint8_t colorIndex);
+
+            virtual void DrawRect(
+                myos::common::uint32_t x,
+                myos::common::uint32_t y,
+                myos::common::uint32_t width,
+                myos::common::uint32_t height,
+                myos::common::uint8_t r,
+                myos::common::uint8_t g,
+                myos::common::uint8_t b);
         };
 
     }

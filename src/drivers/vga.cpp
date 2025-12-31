@@ -144,10 +144,13 @@ namespace myos
                 0x41, 0x00, 0x0F, 0x00, 0x00};
 
             WriteRegisters(g_320x200x256);
+
+            SetFrameBufferSegment();
+
             return true;
         }
 
-        uint8_t *VideoGraphicsArray::GetFrameBufferSegment()
+        void VideoGraphicsArray::SetFrameBufferSegment()
         {
             graphicsControllerIndexPort.Write(0x06);
             uint8_t segmentNumber = (graphicsControllerDataPort.Read() >> 2) & 0x03;
@@ -155,32 +158,79 @@ namespace myos
             {
             default:
             case 0:
-                return (uint8_t *)0x00000;
+                frameBufferSegment = (uint8_t *)0x00000;
+                break;
             case 1:
-                return (uint8_t *)0xA0000;
+                frameBufferSegment = (uint8_t *)0xA0000;
+                break;
             case 2:
-                return (uint8_t *)0xB0000;
+                frameBufferSegment = (uint8_t *)0xB0000;
+                break;
             case 3:
-                return (uint8_t *)0xB8000;
+                frameBufferSegment = (uint8_t *)0xB8000;
+                break;
             }
+        }
+
+        uint8_t *VideoGraphicsArray::GetFrameBufferSegment()
+        {
+            return frameBufferSegment;
         }
 
         void VideoGraphicsArray::PutPixel(myos::common::uint32_t x, myos::common::uint32_t y, myos::common::uint8_t colorIndex)
         {
-            uint8_t *pixelAddress = GetFrameBufferSegment() + 320 * y + x;
+            uint8_t *pixelAddress = frameBufferSegment + 320 * y + x;
             *pixelAddress = colorIndex;
         }
 
-        uint8_t VideoGraphicsArray::GetColorIndex(myos::common::uint8_t r, myos::common::uint8_t g, myos::common::uint8_t b)
+        uint8_t VideoGraphicsArray::GetColorIndex(
+            myos::common::uint8_t r,
+            myos::common::uint8_t g,
+            myos::common::uint8_t b)
         {
-            if (r == 0x00, g == 0x00, b = 0xA8)
+            // Blue
+            if (r == 0x00 && g == 0x00 && b == 0xA8)
                 return 0x01;
-            return 0x01;
+
+            // Red
+            if (r == 0xFF && g == 0x00 && b == 0x00)
+                return 0x04;
+
+            // Default: black
+            return 0x00;
         }
 
         void VideoGraphicsArray::PutPixel(myos::common::uint32_t x, myos::common::uint32_t y, myos::common::uint8_t r, myos::common::uint8_t g, myos::common::uint8_t b)
         {
             PutPixel(x, y, GetColorIndex(r, g, b));
+        }
+
+        void VideoGraphicsArray::DrawRect(
+            myos::common::uint32_t x,
+            myos::common::uint32_t y,
+            myos::common::uint32_t width,
+            myos::common::uint32_t height,
+            myos::common::uint8_t colorIndex)
+        {
+            for (uint32_t iy = 0; iy < height; iy++)
+            {
+                for (uint32_t ix = 0; ix < width; ix++)
+                {
+                    PutPixel(x + ix, y + iy, colorIndex);
+                }
+            }
+        }
+
+        void VideoGraphicsArray::DrawRect(
+            myos::common::uint32_t x,
+            myos::common::uint32_t y,
+            myos::common::uint32_t width,
+            myos::common::uint32_t height,
+            myos::common::uint8_t r,
+            myos::common::uint8_t g,
+            myos::common::uint8_t b)
+        {
+            DrawRect(x, y, width, height, GetColorIndex(r, g, b));
         }
     }
 }

@@ -19,7 +19,7 @@ void MouseEventHandler::OnMouseDown(uint8_t button)
 void MouseEventHandler::OnMouseUp(uint8_t button)
 {
 }
-void MouseEventHandler::OnMouseMove(int x, int y)
+void MouseEventHandler::OnMouseMove(myos::common::int8_t xoffset, myos::common::int8_t yoffset)
 {
 }
 
@@ -70,7 +70,7 @@ uint32_t MouseDriver::HandleInterrupt(uint32_t esp)
         if (buffer[1] != 0 || buffer[2] != 0)
         {
 
-            handler->OnMouseMove(buffer[1], buffer[2]);
+            handler->OnMouseMove((int8_t)buffer[1], (int8_t)buffer[2]);
         }
 
         for (uint8_t i = 0; i < 3; i++)
@@ -86,4 +86,67 @@ uint32_t MouseDriver::HandleInterrupt(uint32_t esp)
         buttons = buffer[0];
     }
     return esp;
+}
+
+MouseToConsole::MouseToConsole()
+{
+    uint16_t *VideoMemory = (uint16_t *)0xb8000;
+
+    x = 40;
+    y = 12;
+    VideoMemory[80 * y + x] = (VideoMemory[80 * y + x] & 0x0F00) << 4 | (VideoMemory[80 * y + x] & 0xF000) >> 4 | (VideoMemory[80 * y + x] & 0x00FF);
+}
+
+void MouseToConsole::OnMouseMove(myos::common::int8_t xoffset, myos::common::int8_t yoffset)
+{
+    static uint16_t *VideoMemory = (uint16_t *)0xb8000;
+    VideoMemory[80 * y + x] = (VideoMemory[80 * y + x] & 0x0F00) << 4 | (VideoMemory[80 * y + x] & 0xF000) >> 4 | (VideoMemory[80 * y + x] & 0x00FF);
+
+    x += xoffset;
+
+    if (x >= 80)
+        x = 79;
+    if (x < 0)
+        x = 0;
+
+    y -= yoffset;
+    if (y >= 25)
+        y = 24;
+    if (y < 0)
+        y = 0;
+
+    VideoMemory[80 * y + x] = (VideoMemory[80 * y + x] & 0x0F00) << 4 | (VideoMemory[80 * y + x] & 0xF000) >> 4 | (VideoMemory[80 * y + x] & 0x00FF);
+}
+
+MouseToVGAScreen::MouseToVGAScreen(VideoGraphicsArray *vga) : vga(vga)
+{
+    x = 155;
+    y = 95;
+
+    vga->DrawRect(
+        x, y, 10, 10, 0xff, 0, 0);
+}
+
+void MouseToVGAScreen::OnMouseMove(int8_t xoffset, int8_t yoffset)
+{
+
+    vga->DrawRect(x, y, 10, 10, BLUE);
+
+    x += xoffset;
+
+    if (x >= 310)
+        x = 310;
+
+    if (x < 0)
+        x = 0;
+
+    y -= yoffset;
+
+    if (y >= 190)
+        y = 190;
+
+    if (y < 0)
+        y = 0;
+
+    vga->DrawRect((uint32_t)x, (uint32_t)y, 10, 10, RED);
 }

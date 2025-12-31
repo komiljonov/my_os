@@ -28,42 +28,6 @@ class PrintfKeyboardEventHandler : public KeyboardEventHandler
     }
 };
 
-class MouseToConsole : public MouseEventHandler
-{
-    int8_t x, y;
-
-public:
-    MouseToConsole()
-    {
-        uint16_t *VideoMemory = (uint16_t *)0xb8000;
-
-        x = 40;
-        y = 12;
-        VideoMemory[80 * y + x] = (VideoMemory[80 * y + x] & 0x0F00) << 4 | (VideoMemory[80 * y + x] & 0xF000) >> 4 | (VideoMemory[80 * y + x] & 0x00FF);
-    }
-
-    void OnMouseMove(int xoffset, int yoffset)
-    {
-        static uint16_t *VideoMemory = (uint16_t *)0xb8000;
-        VideoMemory[80 * y + x] = (VideoMemory[80 * y + x] & 0x0F00) << 4 | (VideoMemory[80 * y + x] & 0xF000) >> 4 | (VideoMemory[80 * y + x] & 0x00FF);
-
-        x += xoffset;
-
-        if (x >= 80)
-            x = 79;
-        if (x < 0)
-            x = 0;
-
-        y -= yoffset;
-        if (y >= 25)
-            y = 24;
-        if (y < 0)
-            y = 0;
-
-        VideoMemory[80 * y + x] = (VideoMemory[80 * y + x] & 0x0F00) << 4 | (VideoMemory[80 * y + x] & 0xF000) >> 4 | (VideoMemory[80 * y + x] & 0x00FF);
-    }
-};
-
 extern "C" void
 callConstructors()
 {
@@ -81,6 +45,8 @@ extern "C" void kernelMain(void *multiboot_structure, uint32_t magicnumber)
 
     printf("Initializing Hardware, Stage 1\n");
 
+    VideoGraphicsArray vga;
+
     DriverManager drvManager;
 
     PrintfKeyboardEventHandler kbHandler;
@@ -90,7 +56,8 @@ extern "C" void kernelMain(void *multiboot_structure, uint32_t magicnumber)
 
     printf("Keyboard driver added to driver manager\n");
 
-    MouseToConsole mouseHandler;
+    // MouseToConsole mouseHandler;
+    MouseToVGAScreen mouseHandler(&vga);
 
     MouseDriver mouse(&interrupts, &mouseHandler);
 
@@ -105,8 +72,6 @@ extern "C" void kernelMain(void *multiboot_structure, uint32_t magicnumber)
 
     printf("Initializing Hardware, Stage 2\n");
 
-    VideoGraphicsArray vga;
-
     drvManager.ActivateAll();
 
     printf("Initializing Hardware, Stage 3\n");
@@ -114,13 +79,15 @@ extern "C" void kernelMain(void *multiboot_structure, uint32_t magicnumber)
     interrupts.Activate();
 
     vga.SetMode(320, 200, 8);
-    for (uint32_t y = 0; y < 200; y++)
-    {
-        for (uint32_t x = 0; x < 320; x++)
-        {
-            vga.PutPixel(x, y, 0x00, 0x00, 0xA8);
-        }
-    }
+
+    // for (uint32_t y = 0; y < 200; y++)
+    // {
+    //     for (uint32_t x = 0; x < 320; x++)
+    //     {
+    //         vga.PutPixel(x, y, BLUE);
+    //     }
+    // }
+    vga.DrawRect(0, 0, 320, 200, BLUE);
 
     printf("Initializing Hardware, Active\n");
 
