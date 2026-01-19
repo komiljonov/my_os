@@ -88,7 +88,8 @@ namespace myos
             picMasterData.Write(0x00);
             picSlaveData.Write(0x00);
 
-            picMasterData.Write(0xF9);
+            // picMasterData.Write(0xF9);
+            picMasterData.Write(0xF8);
             picSlaveData.Write(0xEF);
 
             interruptDescriptorTablePointer idt_pointer;
@@ -147,8 +148,8 @@ namespace myos
             else if (interruptNumber != 0x20)
             {
 
-                printf("UNHANDLED INTERRUPT 0x");
-                printHex(interruptNumber);
+                // printf("UNHANDLED INTERRUPT 0x");
+                // printHex(interruptNumber);
             }
 
             if (0x20 <= interruptNumber && interruptNumber < 0x30)

@@ -125,28 +125,94 @@ MouseToVGAScreen::MouseToVGAScreen(VideoGraphicsArray *vga) : vga(vga)
 
     vga->DrawRect(
         x, y, 10, 10, 0xff, 0, 0);
+
+    vga->Present();
 }
+
+// void MouseToVGAScreen::OnMouseMove(int8_t xoffset, int8_t yoffset)
+// {
+
+//     vga->DrawRect(x, y, 10, 10, BLUE);
+
+//     x += xoffset;
+
+//     if (x >= 310)
+//         x = 310;
+
+//     if (x < 0)
+//         x = 0;
+
+//     y -= yoffset;
+
+//     if (y >= 190)
+//         y = 190;
+
+//     if (y < 0)
+//         y = 0;
+
+//     vga->DrawRect((uint32_t)x, (uint32_t)y, 10, 10, COLORS[color_index]);
+//     // vga->Present();
+// }
 
 void MouseToVGAScreen::OnMouseMove(int8_t xoffset, int8_t yoffset)
 {
-
-    vga->DrawRect(x, y, 10, 10, BLUE);
-
     x += xoffset;
-
-    if (x >= 310)
-        x = 310;
-
     if (x < 0)
         x = 0;
+    if (x > 310)
+        x = 310;
 
     y -= yoffset;
-
-    if (y >= 190)
-        y = 190;
-
     if (y < 0)
         y = 0;
+    if (y > 190)
+        y = 190;
 
-    vga->DrawRect((uint32_t)x, (uint32_t)y, 10, 10, RED);
+    dirty = true;
+}
+
+bool  MouseToVGAScreen::Render()
+{
+    if (!dirty)
+    {
+        return false;
+    }
+    int32_t cx, cy;
+
+    // snapshot x/y atomically w.r.t IRQ updates
+    // asm volatile("cli");
+    cx = x;
+    cy = y;
+    // asm volatile("sti");
+
+    // erase old cursor
+    vga->DrawRect((uint32_t)prevX, (uint32_t)prevY, 10, 10, BLUE);
+
+    // draw new cursor
+    vga->DrawRect((uint32_t)cx, (uint32_t)cy, 10, 10, COLORS[color_index]);
+
+    prevX = cx;
+    prevY = cy;
+
+    dirty = false;
+    return true;
+}
+
+void MouseToVGAScreen::OnMouseDown(uint8_t button)
+{
+    NextColor();
+    // vga->DrawRect((uint32_t)x, (uint32_t)y, 10, 10, COLORS[color_index]);
+}
+
+void MouseToVGAScreen::NextColor()
+{
+
+    color_index += 1;
+
+    if (color_index >= 4)
+    {
+        color_index = 0;
+    }
+    dirty = true;
+    // vga->DrawRect((uint32_t)x, (uint32_t)y, 10, 10, COLORS[color_index]);
 }

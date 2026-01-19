@@ -13,22 +13,22 @@ namespace myos
     namespace drivers
     {
 
-        constexpr uint8_t BLACK = 0x00;
-        constexpr uint8_t BLUE = 0x01;
-        constexpr uint8_t GREEN = 0x02;
-        constexpr uint8_t CYAN = 0x03;
-        constexpr uint8_t RED = 0x04;
-        constexpr uint8_t MAGENTA = 0x05;
-        constexpr uint8_t BROWN = 0x06;
-        constexpr uint8_t LIGHTGRAY = 0x07;
-        constexpr uint8_t DARKGRAY = 0x08;
-        constexpr uint8_t LIGHTBLUE = 0x09;
-        constexpr uint8_t LIGHTGREEN = 0x0A;
-        constexpr uint8_t LIGHTCYAN = 0x0B;
-        constexpr uint8_t LIGHTRED = 0x0C;
-        constexpr uint8_t LIGHTMAGENTA = 0x0D;
-        constexpr uint8_t YELLOW = 0x0E;
-        constexpr uint8_t WHITE = 0x0F;
+        constexpr myos::common::uint8_t BLACK = 0x00;
+        constexpr myos::common::uint8_t BLUE = 0x01;
+        constexpr myos::common::uint8_t GREEN = 0x02;
+        constexpr myos::common::uint8_t CYAN = 0x03;
+        constexpr myos::common::uint8_t RED = 0x04;
+        constexpr myos::common::uint8_t MAGENTA = 0x05;
+        constexpr myos::common::uint8_t BROWN = 0x06;
+        constexpr myos::common::uint8_t LIGHTGRAY = 0x07;
+        constexpr myos::common::uint8_t DARKGRAY = 0x08;
+        constexpr myos::common::uint8_t LIGHTBLUE = 0x09;
+        constexpr myos::common::uint8_t LIGHTGREEN = 0x0A;
+        constexpr myos::common::uint8_t LIGHTCYAN = 0x0B;
+        constexpr myos::common::uint8_t LIGHTRED = 0x0C;
+        constexpr myos::common::uint8_t LIGHTMAGENTA = 0x0D;
+        constexpr myos::common::uint8_t YELLOW = 0x0E;
+        constexpr myos::common::uint8_t WHITE = 0x0F;
 
         class MouseEventHandler
         {
@@ -72,13 +72,32 @@ namespace myos
 
         class MouseToVGAScreen : public MouseEventHandler
         {
-            myos::common::int32_t x, y;
 
+            volatile  myos::common::int32_t prevX, prevY;
+            volatile  myos::common::int32_t x, y;
+
+            bool dirty;
+
+            
+            myos::common::uint8_t color_index = 0;
+            
+            myos::common::uint8_t COLORS[4] = {RED, YELLOW, GREEN, BROWN};
+            
             VideoGraphicsArray *vga;
 
         public:
             MouseToVGAScreen(VideoGraphicsArray *vga);
             virtual void OnMouseMove(myos::common::int8_t xoffset, myos::common::int8_t yoffset);
+            virtual void OnMouseDown(myos::common::uint8_t button);
+
+
+            bool Dirty() {
+                return dirty;
+            }
+
+            bool Render();
+
+            void NextColor();
         };
 
     }

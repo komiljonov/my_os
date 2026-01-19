@@ -1,4 +1,5 @@
 #include <drivers/vga.h>
+#include <common/common.h>
 
 using namespace myos::common;
 using namespace myos::drivers;
@@ -7,6 +8,63 @@ namespace myos
 {
     namespace drivers
     {
+
+        static myos::common::uint8_t g_320x200x256[] = {
+            /* MISC
+             *
+             * 0x63 => 01100011
+             * 7 6 5 4 3 2 1 0
+             * 1 1 0 0 0 1 1 0
+             * VSP HSP - - CS CS ERAM IOS
+             * 7,6 - 480 lines
+             * 5,4 - free
+             * 3,2 - 28,322 MHZ Clock
+             * 1 - Enable Ram
+             * 0 - Map 0x3d4 to 0x3b4
+             */
+            0x63,
+            /* SEQ */
+            /**
+             * index 0x00 - Reset
+             * 0x03 = 11
+             * Bits 1,0 Synchronous reset
+             */
+            0x03,
+            /**
+             * index 0x01
+             * Clocking mode register
+             * 8/9 Dot Clocks
+             */
+            0x01,
+            /**
+             * Map Mask Register, 0x02
+             * 0x0F = 1111
+             * Enable all 4 Maps Bits 0-3
+             * chain 4 mode
+             */
+            0x0F,
+            /**
+             * map select register, 0x03
+             * no character map enabled
+             */
+            0x00,
+            /**
+             * memory mode register 0x04
+             * enables ch4,odd/even,extended memory
+             */
+            0x0E,
+            /* CRTC */
+            0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
+            0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x9C, 0x0E, 0x8F, 0x28, 0x40, 0x96, 0xB9, 0xA3,
+            0xFF,
+            /* GC */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
+            0xFF,
+            /* AC */
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+            0x41, 0x00, 0x0F, 0x00, 0x00};
 
         VideoGraphicsArray::VideoGraphicsArray()
             : miscPort(0x3c2),
@@ -86,66 +144,13 @@ namespace myos
             if (!SupportsMode(width, height, colorDepth))
                 return false;
 
-            uint8_t g_320x200x256[] = {
-                /* MISC
-                 *
-                 * 0x63 => 01100011
-                 * 7 6 5 4 3 2 1 0
-                 * 1 1 0 0 0 1 1 0
-                 * VSP HSP - - CS CS ERAM IOS
-                 * 7,6 - 480 lines
-                 * 5,4 - free
-                 * 3,2 - 28,322 MHZ Clock
-                 * 1 - Enable Ram
-                 * 0 - Map 0x3d4 to 0x3b4
-                 */
-                0x63,
-                /* SEQ */
-                /**
-                 * index 0x00 - Reset
-                 * 0x03 = 11
-                 * Bits 1,0 Synchronous reset
-                 */
-                0x03,
-                /**
-                 * index 0x01
-                 * Clocking mode register
-                 * 8/9 Dot Clocks
-                 */
-                0x01,
-                /**
-                 * Map Mask Register, 0x02
-                 * 0x0F = 1111
-                 * Enable all 4 Maps Bits 0-3
-                 * chain 4 mode
-                 */
-                0x0F,
-                /**
-                 * map select register, 0x03
-                 * no character map enabled
-                 */
-                0x00,
-                /**
-                 * memory mode register 0x04
-                 * enables ch4,odd/even,extended memory
-                 */
-                0x0E,
-                /* CRTC */
-                0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
-                0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x9C, 0x0E, 0x8F, 0x28, 0x40, 0x96, 0xB9, 0xA3,
-                0xFF,
-                /* GC */
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
-                0xFF,
-                /* AC */
-                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-                0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                0x41, 0x00, 0x0F, 0x00, 0x00};
-
             WriteRegisters(g_320x200x256);
 
             SetFrameBufferSegment();
+
+            // backBuffer = new uint8_t[320 * 200];
+
+            Clear(0x00);
 
             return true;
         }
@@ -179,8 +184,9 @@ namespace myos
 
         void VideoGraphicsArray::PutPixel(myos::common::uint32_t x, myos::common::uint32_t y, myos::common::uint8_t colorIndex)
         {
-            uint8_t *pixelAddress = frameBufferSegment + 320 * y + x;
-            *pixelAddress = colorIndex;
+            // uint8_t *pixelAddress = frameBufferSegment + 320 * y + x;
+            // *pixelAddress = colorIndex;
+            backBuffer[320 * y + x] = colorIndex; // RAM write (fast)
         }
 
         uint8_t VideoGraphicsArray::GetColorIndex(
@@ -212,13 +218,16 @@ namespace myos
             myos::common::uint32_t height,
             myos::common::uint8_t colorIndex)
         {
+            // for (uint32_t iy = 0; iy < height; iy++)
+            // {
+            //     for (uint32_t ix = 0; ix < width; ix++)
+            //     {
+            //         PutPixel(x + ix, y + iy, colorIndex);
+            //     }
+            // }
+
             for (uint32_t iy = 0; iy < height; iy++)
-            {
-                for (uint32_t ix = 0; ix < width; ix++)
-                {
-                    PutPixel(x + ix, y + iy, colorIndex);
-                }
-            }
+                myos::common::memset(frameBufferSegment + (y + iy) * 320 + x, colorIndex, width);
         }
 
         void VideoGraphicsArray::DrawRect(
@@ -231,6 +240,28 @@ namespace myos
             myos::common::uint8_t b)
         {
             DrawRect(x, y, width, height, GetColorIndex(r, g, b));
+            // Present();
         }
+
+        void VideoGraphicsArray::Present()
+        {
+            // one linear copy per frame
+            // memcpy(frameBufferSegment, backBuffer, 320 * 200);
+        }
+
+        void VideoGraphicsArray::Clear(uint8_t color)
+        {
+            memset(backBuffer, color, 320 * 200);
+        }
+
+        VGARenderScheduler::VGARenderScheduler(VideoGraphicsArray *vga)
+            : vga(vga), renderFlag(false) {}
+
+        void VGARenderScheduler::Tick(void *ctx)
+        {
+            auto self = (VGARenderScheduler *)ctx;
+            self->renderFlag = true;
+        }
+
     }
 }

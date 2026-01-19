@@ -12,6 +12,10 @@ namespace myos
 
         class VideoGraphicsArray
         {
+
+        private:
+            myos::common::uint8_t backBuffer[320 * 200];
+
         protected:
             hardwarecommunication::Port8Bit miscPort;
             hardwarecommunication::Port8Bit crtcIndexPort;
@@ -60,6 +64,31 @@ namespace myos
                 myos::common::uint8_t r,
                 myos::common::uint8_t g,
                 myos::common::uint8_t b);
+
+            virtual void Present();
+
+            void Clear(myos::common::uint8_t color);
+        };
+
+        class VGARenderScheduler
+        {
+            VideoGraphicsArray *vga;
+            volatile bool renderFlag;
+
+        public:
+            VGARenderScheduler(VideoGraphicsArray *vga);
+
+            static void Tick(void *ctx);
+
+            bool Flag()
+            {
+                return renderFlag;
+            }
+
+            void SetFlag(bool value)
+            {
+                renderFlag = value;
+            }
         };
 
     }

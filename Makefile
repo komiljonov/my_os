@@ -20,16 +20,18 @@ ISO        = mykernel.iso
 
 # Source files (adjust if you add/remove files)
 CPP_SOURCES = loader.cpp \
- 				common.cpp \
-				gdt.cpp \
-				drivers/driver.cpp \
-				hardwarecommunication/port.cpp \
-				hardwarecommunication/interrupts.cpp \
-				hardwarecommunication/pci.cpp  \
-				drivers/keyboard.cpp \
-				drivers/mouse.cpp \
-				drivers/vga.cpp \
-				kernel.cpp
+ 	        common.cpp \
+            gdt.cpp \
+            drivers/driver.cpp \
+            hardwarecommunication/port.cpp \
+            hardwarecommunication/interrupts.cpp \
+            hardwarecommunication/pci.cpp \
+            hardwarecommunication/pit.cpp \
+            drivers/keyboard.cpp \
+            drivers/mouse.cpp \
+            drivers/vga.cpp \
+            timer.cpp \
+            kernel.cpp
 
 ASM_SOURCES = hardwarecommunication/interruptstubs.s
 
